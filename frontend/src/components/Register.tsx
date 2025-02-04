@@ -16,11 +16,12 @@ const Register: React.FC = () => {
         email,
         password,
       });
+      console.log(response);  // You can log the response here for now
       alert('User registered successfully!');
     } catch (error: any) {
       setError(error.response?.data?.error || 'Something went wrong!');
     }
-  };
+  };  
 
   return (
     <div>
