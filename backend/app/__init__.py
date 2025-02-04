@@ -22,27 +22,34 @@ class DevelopmentConfig(Config):
 
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')  # Heroku or another cloud database URI
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')  # Cloud database URI (e.g., PostgreSQL on Render)
 
 
 def create_app():
     app = Flask(__name__)
 
-    # Set the configuration based on the environment
-    app.config.from_object(DevelopmentConfig if app.config["ENV"] == "development" else ProductionConfig)
+    # Load environment configuration dynamically
+    env = os.getenv('FLASK_ENV', 'development')
+    if env == 'development':
+        app.config.from_object(DevelopmentConfig)
+    else:
+        app.config.from_object(ProductionConfig)
 
     # Enable CORS
     CORS(app)
 
-    # Initialize the extensions
+    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    # Register blueprints for routes and authentication
+    # Register blueprints
     from .routes import main_bp
     from .auth import auth_bp
+    from .users import users_bp  # ✅ Import and register users blueprint
+
     app.register_blueprint(main_bp, url_prefix='/api')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(users_bp, url_prefix='/api/users')  # ✅ Register users blueprint
 
     return app

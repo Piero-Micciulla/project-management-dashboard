@@ -145,6 +145,13 @@ We use Flask-Migrate to manage database schema changes. Here are the common comm
 - Axios (for making API requests)
 - CSS (for styling)
 
+
+## Deployment Tools
+
+- **Backend:** Deployed on **Render** (https://render.com/) for hosting the Flask API.
+- **Frontend:** Deployed on **Netlify** (https://www.netlify.com/) for hosting the React application.
+
+
 ## Contributing
 Feel free to fork this repository and submit pull requests if you have any improvements or fixes.
 
