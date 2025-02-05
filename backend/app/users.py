@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash
+import cloudinary.uploader
 from .models import db, User
 
 # Create a blueprint for user-related routes
@@ -11,10 +12,10 @@ def is_admin(user):
     return hasattr(user, 'role') and user.role == 'admin'
 
 ##############################################
-# Regular User Endpoints (for the logged-in user)
+# ✅ Regular User Endpoints (includes avatar)
 ##############################################
 
-# GET /api/users/me - Retrieve current user's profile
+# ✅ GET /api/users/me - Retrieve current user's profile
 @users_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_my_profile():
@@ -23,15 +24,15 @@ def get_my_profile():
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    user_data = {
+    return jsonify({
         'id': user.id,
         'username': user.username,
         'email': user.email,
-        'role': getattr(user, 'role', 'user')
-    }
-    return jsonify(user_data), 200
+        'role': getattr(user, 'role', 'user'),
+        'avatar': user.avatar
+    }), 200
 
-# PUT /api/users/me - Update current user's profile
+# ✅ PUT /api/users/me - Update current user's profile (excluding avatar)
 @users_bp.route('/me', methods=['PUT'])
 @jwt_required()
 def update_my_profile():
@@ -51,49 +52,39 @@ def update_my_profile():
     db.session.commit()
     return jsonify({'message': 'Profile updated successfully'}), 200
 
-# DELETE /api/users/me - Delete current user's account
-@users_bp.route('/me', methods=['DELETE'])
+# ✅ POST /api/users/me/avatar - Upload or update user avatar
+@users_bp.route('/me/avatar', methods=['POST'])
 @jwt_required()
-def delete_my_account():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
+def upload_avatar():
+    return handle_avatar_upload(get_jwt_identity())
 
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({'message': 'Account deleted successfully'}), 200
+##############################################
+# ✅ Admin-Only Endpoints (includes avatar)
+##############################################
 
-##########################################
-# Admin-Only Endpoints for User Management
-##########################################
-
-# GET /api/users - List all users (admin only)
+# ✅ GET /api/users - List all users (admin only)
 @users_bp.route('', methods=['GET'])
 @jwt_required()
 def list_all_users():
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
+    current_user = User.query.get(get_jwt_identity())
     if not current_user or not is_admin(current_user):
         return jsonify({'error': 'Admin access required'}), 403
 
-    users = User.query.all()
-    users_list = []
-    for user in users:
-        users_list.append({
+    return jsonify([
+        {
             'id': user.id,
             'username': user.username,
             'email': user.email,
-            'role': getattr(user, 'role', 'user')
-        })
-    return jsonify(users_list), 200
+            'role': getattr(user, 'role', 'user'),
+            'avatar': user.avatar
+        } for user in User.query.all()
+    ]), 200
 
-# GET /api/users/<id> - Get specific user's details (admin only)
+# ✅ GET /api/users/<id> - Get specific user's details (admin only)
 @users_bp.route('/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
+    current_user = User.query.get(get_jwt_identity())
     if not current_user or not is_admin(current_user):
         return jsonify({'error': 'Admin access required'}), 403
 
@@ -101,20 +92,19 @@ def get_user(user_id):
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    user_data = {
+    return jsonify({
         'id': user.id,
         'username': user.username,
         'email': user.email,
-        'role': getattr(user, 'role', 'user')
-    }
-    return jsonify(user_data), 200
+        'role': getattr(user, 'role', 'user'),
+        'avatar': user.avatar
+    }), 200
 
-# PUT /api/users/<id> - Update a specific user (admin only)
+# ✅ PUT /api/users/<id> - Update a specific user (admin only)
 @users_bp.route('/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
+    current_user = User.query.get(get_jwt_identity())
     if not current_user or not is_admin(current_user):
         return jsonify({'error': 'Admin access required'}), 403
 
@@ -129,23 +119,27 @@ def update_user(user_id):
         user.email = data['email']
     if 'password' in data:
         user.password = generate_password_hash(data['password'])
-    
-    # Validate and update role
-    if 'role' in data:
-        if data['role'] not in ['user', 'admin']:
-            return jsonify({'error': 'Invalid role provided'}), 400
+    if 'role' in data and data['role'] in ['user', 'admin']:
         user.role = data['role']
     
     db.session.commit()
     return jsonify({'message': 'User updated successfully'}), 200
 
+# ✅ POST /api/users/<id>/avatar - Upload avatar for a specific user (admin only)
+@users_bp.route('/<int:user_id>/avatar', methods=['POST'])
+@jwt_required()
+def upload_user_avatar(user_id):
+    current_user = User.query.get(get_jwt_identity())
+    if not current_user or not is_admin(current_user):
+        return jsonify({"error": "Admin access required"}), 403
 
-# DELETE /api/users/<id> - Delete a specific user (admin only)
+    return handle_avatar_upload(user_id)
+
+# ✅ DELETE /api/users/<id> - Delete a specific user (admin only)
 @users_bp.route('/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
+    current_user = User.query.get(get_jwt_identity())
     if not current_user or not is_admin(current_user):
         return jsonify({'error': 'Admin access required'}), 403
 
@@ -160,3 +154,44 @@ def delete_user(user_id):
     db.session.commit()
     return jsonify({'message': 'User deleted successfully'}), 200
 
+##############################################
+# ✅ Helper Function for Avatar Upload
+##############################################
+
+def handle_avatar_upload(user_id):
+    """ Upload avatar for a user, validating and storing it in Cloudinary """
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if 'avatar' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files['avatar']
+
+    # Validate file type
+    allowed_extensions = {"jpg", "jpeg", "png", "gif"}
+    file_extension = file.filename.rsplit(".", 1)[-1].lower()
+    if file_extension not in allowed_extensions:
+        return jsonify({"error": "Invalid file type. Allowed: jpg, jpeg, png, gif"}), 400
+
+    try:
+        # Upload to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder="user_avatars",
+            transformation=[
+                {"width": 300, "height": 300, "crop": "thumb", "gravity": "face"},
+                {"quality": "auto"}
+            ],
+            format="jpg"
+        )
+
+        # Save new avatar URL
+        user.avatar = upload_result["secure_url"]
+        db.session.commit()
+
+        return jsonify({"message": "Avatar updated successfully", "avatar_url": user.avatar}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to upload avatar: {str(e)}"}), 500

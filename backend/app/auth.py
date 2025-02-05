@@ -23,7 +23,13 @@ def register():
     hashed_password = generate_password_hash(data['password'])
 
     # Create new user
-    user = User(username=data['username'], email=data['email'], password=hashed_password)
+    user = User(
+        username=data['username'],
+        email=data['email'],
+        password=hashed_password,
+        avatar=data.get('avatar', '')  # ✅ Save avatar URL if provided
+    )
+
     db.session.add(user)
     db.session.commit()
 
