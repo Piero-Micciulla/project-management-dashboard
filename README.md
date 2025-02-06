@@ -133,17 +133,103 @@ We use Flask-Migrate to manage database schema changes. Here are the common comm
 
 ## Technologies Used
 
-### Backend:
-- Flask (Python)
-- Flask-SQLAlchemy (ORM for database interactions)
-- Flask-Migrate (Database migrations)
-- Flask-JWT-Extended (JWT Authentication)
-- SQLite (Database)
+## 🛠️ Technologies & Tools Used
 
-### Frontend:
-- React (with TypeScript)
-- Axios (for making API requests)
-- CSS (for styling)
+Throughout the development of this project, we integrated several essential tools and libraries to enhance functionality and maintainability. Below are the new technologies we used:
+
+### 1️⃣ **React Router**
+   - We used **React Router** to enable client-side routing in our application.
+   - This allows us to create different pages (Dashboard, Manage Users, Profile, Login, etc.) without requiring full-page reloads.
+   - Routes are defined inside `App.tsx` using `<Routes>` and `<Route>` components.
+
+   🔗 **Documentation**: [React Router](https://reactrouter.com/)
+
+---
+
+### 2️⃣ **Material UI (MUI)**
+   - We styled our UI components with **Material UI**, a popular React component library.
+   - It provides pre-built **buttons, tables, dialogs, alerts, and form controls**, making the frontend more professional and consistent.
+   - Examples of **MUI components** used:
+     - `<Button>` for actions like **Edit, Delete, Add User**.
+     - `<Dialog>` for modals when adding/editing users.
+     - `<Table>` for displaying user lists.
+
+   🔗 **Documentation**: [Material UI](https://mui.com/)
+
+---
+
+### 3️⃣ **Cloudinary (Image Hosting & Management)**
+   - We integrated **Cloudinary** to handle **image uploads** for user avatars.
+   - Users can upload profile pictures, which get stored in Cloudinary and are retrieved via a **secure URL**.
+   - The Flask backend handles uploads via `cloudinary.uploader.upload()`.
+   - Avatars are displayed using `<Avatar src={user.avatar} />` in **React**.
+
+   🔗 **Documentation**: [Cloudinary](https://cloudinary.com/documentation)
+
+---
+
+### 4️⃣ **Axios (API Requests)**
+   - We used **Axios** to handle API requests in React.
+   - It allows fetching user data, updating profiles, and uploading avatars via HTTP requests.
+   - Example: 
+     ```tsx
+     const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`, {
+       headers: { Authorization: `Bearer ${token}` },
+     });
+     ```
+
+   🔗 **Documentation**: [Axios](https://axios-http.com/)
+
+---
+
+### 5️⃣ **Flask-JWT-Extended (Authentication & Authorization)**
+   - This Flask extension manages **JWT authentication**.
+   - It allows users to log in and receive an **access token**, which is used in API requests.
+   - Protected routes (like `/api/users`) require authentication using `@jwt_required()`.
+
+   🔗 **Documentation**: [Flask-JWT-Extended](https://flask-jwt-extended.readthedocs.io/en/stable/)
+
+---
+
+### 6️⃣ **Flask-SQLAlchemy (Database ORM)**
+   - We used **SQLAlchemy** to manage our database models in Flask.
+   - It simplifies database operations, such as **creating users, updating avatars, and managing roles**.
+   - Queries are done via:
+     ```python
+     user = User.query.get(user_id)
+     ```
+
+   🔗 **Documentation**: [SQLAlchemy](https://www.sqlalchemy.org/)
+
+---
+
+### 7️⃣ **React Context API (Global State Management)**
+   - We used **React Context API** to manage authentication globally.
+   - User authentication state (token, user info) is stored in `AuthContext.tsx` and used across all components.
+
+   🔗 **Documentation**: [React Context API](https://react.dev/reference/react/useContext)
+
+---
+
+### 📌 **Summary**
+| Technology  | Purpose |
+|-------------|---------|
+| **React Router**  | Client-side navigation |
+| **Material UI**  | Pre-built UI components |
+| **Cloudinary**  | Image upload & hosting |
+| **Axios**  | API requests (GET, POST, PUT, DELETE) |
+| **Flask-JWT-Extended**  | Secure authentication |
+| **SQLAlchemy**  | Database ORM |
+| **React Context API**  | Global state management |
+
+---
+
+
+## Deployment Tools
+
+- **Backend:** Deployed on **Render** (https://render.com/) for hosting the Flask API.
+- **Frontend:** Deployed on **Netlify** (https://www.netlify.com/) for hosting the React application.
+
 
 ## Contributing
 Feel free to fork this repository and submit pull requests if you have any improvements or fixes.

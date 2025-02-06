@@ -23,7 +23,13 @@ def register():
     hashed_password = generate_password_hash(data['password'])
 
     # Create new user
-    user = User(username=data['username'], email=data['email'], password=hashed_password)
+    user = User(
+        username=data['username'],
+        email=data['email'],
+        password=hashed_password,
+        avatar=data.get('avatar', '')  # ✅ Save avatar URL if provided
+    )
+
     db.session.add(user)
     db.session.commit()
 
@@ -43,7 +49,7 @@ def login():
 
     # Check if user exists and password is correct
     if user and check_password_hash(user.password, data['password']):
-        access_token = create_access_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
         return jsonify({'token': access_token}), 200
 
     return jsonify({'error': 'Invalid credentials'}), 401

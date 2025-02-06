@@ -1,56 +1,102 @@
 // src/components/Login.tsx
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useContext } from "react";
+import axios from "axios";
+import { AuthContext } from "../context/AuthContext";
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
 
-const Login = ({ onLogin }: { onLogin: (token: string) => void }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+const Login = () => {
+  const { login } = useContext(AuthContext)!;
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setLoading(true);
+    setError("");
+
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, {
-        email,
-        password,
-      });
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, form);
       const token = response.data.token;
-      localStorage.setItem('token', token); // Save the token in localStorage
-      onLogin(token); // Pass token to parent component if needed
-      alert('Login successful!');
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Invalid credentials');
+      login(form.email, token);
+      alert("Login successful!");
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Invalid credentials");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          mt: 5,
+          p: 4,
+          boxShadow: 3,
+          borderRadius: 2,
+          backgroundColor: "white",
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="h4" gutterBottom>
+          Login
+        </Typography>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            variant="outlined"
+            margin="normal"
             type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             required
           />
-        </div>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input
+          <TextField
+            fullWidth
+            label="Password"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+            variant="outlined"
+            margin="normal"
             type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             required
           />
-        </div>
-        <button type="submit">Login</button>
-        {error && <div className="error">{error}</div>}
-      </form>
-    </div>
+
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 3 }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : "Login"}
+          </Button>
+        </form>
+      </Box>
+    </Container>
   );
 };
 
