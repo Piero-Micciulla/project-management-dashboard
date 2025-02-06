@@ -69,24 +69,21 @@ const UserList: React.FC = () => {
   };
 
   // ✅ Handle Avatar Upload
-  const handleAvatarUpload = async (userId?: number) => {
-    if (!selectedAvatar) return;
-
+  const handleAvatarUpload = async (userId: number) => {
+    if (!selectedAvatar) return; // No file selected, do nothing
+  
     try {
       const formData = new FormData();
       formData.append("avatar", selectedAvatar);
       const token = localStorage.getItem("token");
-
-      // ✅ Correct API endpoint for admins vs regular users
-      const endpoint =
-        userId && userId !== loggedInUserId
-          ? `/api/users/${userId}/avatar` // Admin uploading for another user
-          : `/api/users/me/avatar`; // Regular user updating their own avatar
-
+  
+      // ✅ Always upload avatar for the specified user (since only admins use this function)
+      const endpoint = `/api/users/${userId}/avatar`;
+  
       await axios.post(`${process.env.REACT_APP_API_URL}${endpoint}`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+  
       alert("Avatar uploaded successfully!");
       fetchUsers();
       setSelectedAvatar(null);
@@ -120,11 +117,11 @@ const UserList: React.FC = () => {
     }
   };
 
-  // ✅ Handle Add New User
   const handleAddUser = async () => {
     try {
-      console.log("Sending user data:", newUser); // ✅ Log request body
-  
+      console.log("📤 Sending user data to register:", newUser);
+      
+      // ✅ Step 1: Register user WITHOUT avatar first
       const response = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/auth/register`,
         {
@@ -138,26 +135,45 @@ const UserList: React.FC = () => {
         }
       );
   
-      console.log("User registered:", response.data); // ✅ Log response
+      console.log("✅ User registered successfully:", response.data);
   
       const userId = response.data.id;
   
-      if (selectedAvatar) {
-        console.log("Uploading avatar...");
-        await handleAvatarUpload(userId);
+      // ✅ Step 2: Check if avatar exists BEFORE trying to upload
+      if (!selectedAvatar) {
+        console.log("⚠️ No avatar selected, skipping upload.");
+      } else if (!userId) {
+        console.log("❌ Error: userId is undefined, cannot upload avatar.");
+      } else {
+        console.log(`🖼 Uploading avatar for user ID: ${userId}`);
+  
+        const formData = new FormData();
+        formData.append("avatar", selectedAvatar);
+        const token = localStorage.getItem("token");
+  
+        await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/users/${userId}/avatar`,
+          formData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+  
+        console.log("✅ Avatar uploaded successfully!");
       }
   
+      // ✅ Step 3: Refresh user list and reset form
       fetchUsers();
       setNewUser({ username: "", email: "", password: "", role: "user" });
       setOpenDialog(false);
       setSelectedAvatar(null);
     } catch (err: any) {
-      console.error("Error adding user:", err.response?.data || err);
+      console.error("❌ Error adding user:", err.response?.data || err);
       setError(err.response?.data?.error || "Failed to add user.");
     }
   };
-    
-
+  
+  
   // ✅ Handle Delete User
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
