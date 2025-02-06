@@ -25,11 +25,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           paddingTop: "20px",
-          paddingBottom: "20px",
-          paddingLeft: "24px",   // ✅ Add left padding
-          paddingRight: "24px",  // ✅ Add right padding
-          maxWidth: "1200px",    // ✅ Optional: Limit max width for better layout
-          margin: "0 auto", 
+          paddingBottom: "20px"
         },
       },
     },
