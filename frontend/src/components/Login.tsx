@@ -2,6 +2,7 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
+import { NotificationContext } from "../context/NotificationContext";
 import {
   Container,
   TextField,
@@ -17,6 +18,7 @@ const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { notify } = useContext(NotificationContext)!;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,9 +33,9 @@ const Login = () => {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, form);
       const token = response.data.token;
       login(form.email, token);
-      alert("Login successful!");
+      notify("Login successful!", "success");
     } catch (err: any) {
-      setError(err.response?.data?.error || "Invalid credentials");
+      notify(err.response?.data?.error || "Invalid credentials", "error");
     } finally {
       setLoading(false);
     }
