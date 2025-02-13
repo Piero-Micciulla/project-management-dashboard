@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import { NotificationContext } from "../context/NotificationContext";
 import { api } from "../api";
 import {
   Container,
@@ -17,62 +18,55 @@ const Register: React.FC = () => {
     username: "",
     email: "",
     password: "",
-    avatar: "", // ✅ New field for avatar URL
+    avatar: "",
   });
-  const [avatarFile, setAvatarFile] = useState<File | null>(null); // ✅ Store the selected image file
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { notify } = useContext(NotificationContext)!;
 
-  // ✅ Handle text input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ✅ Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setAvatarFile(e.target.files[0]);
     }
   };
 
-  // ✅ Upload avatar to Cloudinary before submitting form
   const uploadAvatar = async () => {
-    if (!avatarFile) return null; // If no file, return null
+    if (!avatarFile) return null;
 
     const formData = new FormData();
     formData.append("file", avatarFile);
-    formData.append("upload_preset", "your_upload_preset"); // ✅ Replace with your Cloudinary Upload Preset
+    formData.append("upload_preset", "your_upload_preset");
     formData.append("folder", "user_avatars");
 
     try {
       const response = await axios.post(
-        "https://api.cloudinary.com/v1_1/your_cloud_name/image/upload", // ✅ Replace with your Cloudinary Cloud Name
+        "https://api.cloudinary.com/v1_1/your_cloud_name/image/upload",
         formData
       );
-      return response.data.secure_url; // ✅ Return uploaded image URL
+      return response.data.secure_url;
     } catch (error) {
       console.error("Avatar upload failed:", error);
       return null;
     }
   };
 
-  // ✅ Handle form submission
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // ✅ Upload avatar if file is selected
       const avatarUrl = await uploadAvatar();
       const requestData = { ...form, avatar: avatarUrl || "" }; // If upload fails, send empty avatar field
-
-      // ✅ Send registration data to backend
       const response = await api.post("/auth/register", requestData);
-      console.log(response);
-      alert("User registered successfully!");
+      notify("User registered successfully!", "success");
     } catch (err: any) {
-      setError(err.response?.data?.error || "Something went wrong!");
+      notify(err.response?.data?.error || "Something went wrong!", "error");
     } finally {
       setLoading(false);
     }

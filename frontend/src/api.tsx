@@ -1,6 +1,5 @@
 import axios from "axios";
 
-// Base API URL (Make sure this is set in your .env file)
 const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:5001/api";
 
 export const api = axios.create({
@@ -10,7 +9,6 @@ export const api = axios.create({
   },
 });
 
-// Function to set Authorization header dynamically
 export const setAuthToken = (token: string | null) => {
   if (token) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;

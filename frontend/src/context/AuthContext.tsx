@@ -30,7 +30,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
     try {
-      console.log("Fetching user profile...");
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -48,20 +47,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [fetchUserProfile]);
 
   const login = (email: string, newToken: string) => {
-    console.log("Logging in with token:", newToken);
     localStorage.setItem("token", newToken);
     setToken(newToken);
     fetchUserProfile();
   };
 
   const logout = () => {
-    console.log("Logging out...");
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
   };
-
-  console.log("AuthContext State:", { token, user, isLoading });
 
   return (
     <AuthContext.Provider value={{ token, user, login, logout, isAdmin: user?.role === "admin" }}>

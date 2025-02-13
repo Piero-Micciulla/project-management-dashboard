@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { useContext } from "react";
+import { NotificationContext } from "../context/NotificationContext";
 import axios from "axios";
 import {
   Table,
@@ -43,13 +45,13 @@ const UserList: React.FC = () => {
     role: "user",
   });
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
-  const loggedInUserId = Number(localStorage.getItem("userId")); // Get the logged-in user ID
+  const loggedInUserId = Number(localStorage.getItem("userId"));
+  const { notify } = useContext(NotificationContext)!;
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  // ✅ Fetch Users from API
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -62,37 +64,32 @@ const UserList: React.FC = () => {
     }
   };
 
-  // ✅ Handle Open Dialog for Edit
   const handleEdit = (user: User) => {
     setEditingUser(user);
     setOpenDialog(true);
   };
 
-  // ✅ Handle Avatar Upload
   const handleAvatarUpload = async (userId: number) => {
-    if (!selectedAvatar) return; // No file selected, do nothing
+    if (!selectedAvatar) return;
   
     try {
       const formData = new FormData();
       formData.append("avatar", selectedAvatar);
       const token = localStorage.getItem("token");
-  
-      // ✅ Always upload avatar for the specified user (since only admins use this function)
       const endpoint = `/api/users/${userId}/avatar`;
   
       await axios.post(`${process.env.REACT_APP_API_URL}${endpoint}`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
   
-      alert("Avatar uploaded successfully!");
+      notify("Avatar uploaded successfully!", "success");
       fetchUsers();
       setSelectedAvatar(null);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to upload avatar.");
+      notify(err.response?.data?.error || "Failed to upload avatar.", "error");
     }
   };
 
-  // ✅ Handle Update User
   const handleUpdateUser = async () => {
     if (!editingUser) return;
 
@@ -108,20 +105,17 @@ const UserList: React.FC = () => {
         await handleAvatarUpload(editingUser.id);
       }
 
-      alert("User updated successfully!");
+      notify("User updated successfully!", "success");
       fetchUsers();
       setOpenDialog(false);
       setEditingUser(null);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to update user.");
+      notify(err.response?.data?.error || "Failed to update user.", "error");
     }
   };
 
   const handleAddUser = async () => {
     try {
-      console.log("📤 Sending user data to register:", newUser);
-      
-      // ✅ Step 1: Register user WITHOUT avatar first
       const response = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/auth/register`,
         {
@@ -139,14 +133,11 @@ const UserList: React.FC = () => {
   
       const userId = response.data.id;
   
-      // ✅ Step 2: Check if avatar exists BEFORE trying to upload
       if (!selectedAvatar) {
         console.log("⚠️ No avatar selected, skipping upload.");
       } else if (!userId) {
         console.log("❌ Error: userId is undefined, cannot upload avatar.");
       } else {
-        console.log(`🖼 Uploading avatar for user ID: ${userId}`);
-  
         const formData = new FormData();
         formData.append("avatar", selectedAvatar);
         const token = localStorage.getItem("token");
@@ -162,7 +153,6 @@ const UserList: React.FC = () => {
         console.log("✅ Avatar uploaded successfully!");
       }
   
-      // ✅ Step 3: Refresh user list and reset form
       fetchUsers();
       setNewUser({ username: "", email: "", password: "", role: "user" });
       setOpenDialog(false);
@@ -173,8 +163,6 @@ const UserList: React.FC = () => {
     }
   };
   
-  
-  // ✅ Handle Delete User
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
@@ -198,7 +186,7 @@ const UserList: React.FC = () => {
 
       <Button
         variant="contained"
-        color="success"
+        color="primary"
         style={{ marginBottom: "15px" }}
         onClick={() => {
           setEditingUser(null);
@@ -232,7 +220,7 @@ const UserList: React.FC = () => {
                 <TableCell>{user.role}</TableCell>
                 <TableCell>
                   <Button variant="contained" color="primary" size="small" onClick={() => handleEdit(user)}>Edit</Button>
-                  <Button variant="contained" color="error" size="small" onClick={() => handleDelete(user.id)}>Delete</Button>
+                  <Button variant="contained" color="error" size="small" sx={{ ml: 1 }} onClick={() => handleDelete(user.id)}>Delete</Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -240,7 +228,6 @@ const UserList: React.FC = () => {
         </Table>
       </TableContainer>
 
-      {/* ✅ Add/Edit User Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle>{editingUser ? "Edit User" : "Add New User"}</DialogTitle>
         <DialogContent>
