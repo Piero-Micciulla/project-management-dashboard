@@ -243,7 +243,7 @@ const ProjectDetails: React.FC = () => {
               )}
             </CardContent>
 
-            {user?.role === "admin" && ( // ✅ Only admins can see this
+            {user?.role === "admin" && (
                 <CardActions sx={{ justifyContent: "flex-end" }}>
                     {editMode ? (
                     <>
@@ -281,7 +281,7 @@ const ProjectDetails: React.FC = () => {
 
             <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2 }}>Devs</Typography>
             <List>
-              {assignedUsers.filter((user) => user.role === "user").map((user) => (
+              {assignedUsers.filter((user) => user.role === "user" || user.role === "guest").map((user) => (
                 <ListItem key={user.id} divider>
                   <ListItemAvatar>
                     <Avatar src={user.avatar || "https://via.placeholder.com/50"} />

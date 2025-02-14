@@ -85,8 +85,6 @@ def list_all_users():
 @jwt_required()
 def get_user(user_id):
     current_user = User.query.get(get_jwt_identity())
-    if not current_user or not is_admin(current_user):
-        return jsonify({'error': 'Admin access required'}), 403
 
     user = User.query.get(user_id)
     if not user:

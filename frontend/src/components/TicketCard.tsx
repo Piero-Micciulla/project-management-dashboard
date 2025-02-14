@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useDrag } from "react-dnd";
 import { 
   Card, CardContent, Typography, Chip, IconButton, Dialog, DialogTitle, 
@@ -7,6 +7,8 @@ import {
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import axios from "axios";
+import { AuthContext } from "../context/AuthContext";  // ✅ Import Auth Context
+import { NotificationContext } from "../context/NotificationContext";  // ✅ Import Notification Context
 
 interface Ticket {
   id: number;
@@ -29,6 +31,8 @@ interface TicketCardProps {
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({ ticket, refreshTickets }) => {
+  const { user } = useContext(AuthContext)!; 
+  const { notify } = useContext(NotificationContext)!;
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "TICKET",
     item: { id: ticket.id },
@@ -79,6 +83,11 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, refreshTickets }) => {
   };
 
   const handleEdit = async () => {
+    if (user?.role === "guest") {
+      notify("Guests cannot edit tickets!", "warning");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       await axios.put(
@@ -88,20 +97,29 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, refreshTickets }) => {
       );
       setOpen(false);
       refreshTickets();
+      notify("Ticket updated successfully!", "success");
     } catch (error) {
       console.error("Error updating ticket:", error);
+      notify("Failed to update ticket.", "error");
     }
   };
 
   const handleDelete = async () => {
+    if (user?.role === "guest") {
+      notify("Guests cannot delete tickets!", "error");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`${process.env.REACT_APP_API_URL}/api/tickets/${ticket.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       refreshTickets();
+      notify("Ticket deleted successfully!", "success");
     } catch (error) {
       console.error("Error deleting ticket:", error);
+      notify("Failed to delete ticket.", "error");
     }
   };
 
@@ -116,11 +134,17 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, refreshTickets }) => {
             </Typography>
 
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <IconButton color="primary" onClick={() => setOpen(true)}>
-                <Edit />
+                <IconButton 
+                  color="primary" 
+                  onClick={() => user?.role !== "guest" ? setOpen(true) : notify("Guests cannot edit tickets!", "warning")}
+                >
+                  <Edit />
                 </IconButton>
-                <IconButton color="error" onClick={handleDelete}>
-                <Delete />
+                <IconButton 
+                  color="error" 
+                  onClick={handleDelete}
+                >
+                  <Delete />
                 </IconButton>
             </div>
           </div> 

@@ -270,6 +270,14 @@ def create_ticket():
 @cross_origin()
 def update_ticket(ticket_id):
     user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if user.role == "guest" and "status" not in request.json:
+        return jsonify({"error": "Guests cannot modify tickets except status updates"}),
+
     ticket = Ticket.query.get(ticket_id)
 
     if not ticket:
@@ -293,7 +301,6 @@ def update_ticket(ticket_id):
 
     db.session.commit()
 
-    # ✅ Log Status Change in TicketHistory
     if ticket.status != old_status:
         history = TicketHistory(
             ticket_id=ticket.id,
@@ -304,7 +311,6 @@ def update_ticket(ticket_id):
         )
         db.session.add(history)
 
-    # ✅ Log Priority Change in TicketHistory
     if ticket.priority != old_priority:
         history = TicketHistory(
             ticket_id=ticket.id,
@@ -327,6 +333,11 @@ def update_ticket(ticket_id):
 @cross_origin()
 def delete_ticket(ticket_id):
     user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user or user.role == "guest":
+        return jsonify({"error": "Guests are not allowed to delete tickets"}), 403
+    
     ticket = Ticket.query.get(ticket_id)
 
     if not ticket:

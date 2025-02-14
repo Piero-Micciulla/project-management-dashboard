@@ -1,4 +1,3 @@
-// src/components/Login.tsx
 import React, { useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
@@ -15,10 +14,11 @@ import {
 
 const Login = () => {
   const { login } = useContext(AuthContext)!;
+  const { notify } = useContext(NotificationContext)!;
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { notify } = useContext(NotificationContext)!;
+  const [guestLoading, setGuestLoading] = useState(false); // ✅ Guest Loading State
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,6 +38,23 @@ const Login = () => {
       notify(err.response?.data?.error || "Invalid credentials", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setGuestLoading(true);
+    setError("");
+
+    try {
+      const guestCredentials = { email: "guest@email.com", password: "guest123" };
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, guestCredentials);
+      const token = response.data.token;
+      login(guestCredentials.email, token);
+      notify("Logged in as Guest!", "success");
+    } catch (err: any) {
+      notify(err.response?.data?.error || "Guest login failed", "error");
+    } finally {
+      setGuestLoading(false);
     }
   };
 
@@ -95,6 +112,17 @@ const Login = () => {
             disabled={loading}
           >
             {loading ? <CircularProgress size={24} /> : "Login"}
+          </Button>
+
+          <Button
+            variant="outlined"
+            color="secondary"
+            fullWidth
+            sx={{ mt: 2 }}
+            onClick={handleGuestLogin}
+            disabled={guestLoading}
+          >
+            {guestLoading ? <CircularProgress size={24} /> : "Login as Guest"}
           </Button>
         </form>
       </Box>
